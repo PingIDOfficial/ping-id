@@ -18,30 +18,44 @@ const firebaseConfig = {
 // Init Firebase
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
-
-// Database reference
 const chatRef = ref(db, "chat");
 
-// TOMBOL PING
+// Generate anonymous ID
+const userID = "Ping#" + Math.floor(Math.random() * 9000 + 1000);
+
+// Fungsi PING → radar detect
 window.sendPing = function () {
-  document.getElementById("status").innerText = "📡 Orang terdeteksi!";
-  document.getElementById("chatBox").classList.remove("hidden");
+  const status = document.getElementById("status");
+  const chatBox = document.getElementById("chatBox");
+  
+  // Simulasi deteksi orang 10–20 meter
+  const detected = Math.random() > 0.3; // 70% chance ada orang
+  if (detected) {
+    status.innerText = `📡 Orang terdeteksi di 10–20m!`;
+    chatBox.classList.remove("hidden");
+    console.log("Orang terdeteksi, chat aktif");
+  } else {
+    status.innerText = "❌ Tidak ada orang di sekitar";
+    chatBox.classList.add("hidden");
+    console.log("Tidak ada orang");
+  }
 };
 
-// KIRIM PESAN
+// Kirim pesan
 window.sendMessage = function () {
   const input = document.getElementById("msgInput");
   if (!input.value.trim()) return;
 
   push(chatRef, {
     msg: input.value,
+    user: userID,
     time: Date.now()
   });
 
   input.value = "";
 };
 
-// TERIMA PESAN REALTIME
+// Terima pesan realtime
 onChildAdded(chatRef, (snapshot) => {
   const chatBox = document.getElementById("chatBox");
   chatBox.classList.remove("hidden");
@@ -50,6 +64,6 @@ onChildAdded(chatRef, (snapshot) => {
   const data = snapshot.val();
 
   const div = document.createElement("div");
-  div.textContent = data.msg;
+  div.textContent = `${data.user}: ${data.msg}`;
   messages.appendChild(div);
 });
