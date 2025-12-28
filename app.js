@@ -23,21 +23,47 @@ const chatRef = ref(db, "chat");
 // Generate anonymous ID
 const userID = "Ping#" + Math.floor(Math.random() * 9000 + 1000);
 
-// Fungsi PING → radar detect
+// Array untuk menyimpan titik orang
+let radarDots = [];
+
+// Fungsi PING → detect orang
 window.sendPing = function () {
   const status = document.getElementById("status");
   const chatBox = document.getElementById("chatBox");
-  
-  // Simulasi deteksi orang 10–20 meter
-  const detected = Math.random() > 0.3; // 70% chance ada orang
-  if (detected) {
-    status.innerText = `📡 Orang terdeteksi di 10–20m!`;
+  const radar = document.querySelector(".radar");
+
+  // Simulasi deteksi 1-5 orang
+  const detectedCount = Math.floor(Math.random() * 5) + 1;
+
+  // Clear sebelumnya
+  radarDots.forEach(dot => radar.removeChild(dot));
+  radarDots = [];
+
+  if (detectedCount > 0) {
+    status.innerText = `📡 ${detectedCount} orang terdeteksi!`;
     chatBox.classList.remove("hidden");
-    console.log("Orang terdeteksi, chat aktif");
+    radar.classList.add("detected");
+
+    for (let i = 0; i < detectedCount; i++) {
+      const dot = document.createElement("div");
+      dot.classList.add("dot");
+
+      // Posisi random dalam radar (circle radius)
+      const angle = Math.random() * 2 * Math.PI;
+      const radius = Math.random() * 90 + 20; // jarak 20–110px dari center
+      const x = 50 + radius * Math.cos(angle) / 1.1; // persentase
+      const y = 50 + radius * Math.sin(angle) / 1.1; // persentase
+
+      dot.style.left = `${x}%`;
+      dot.style.top = `${y}%`;
+
+      radar.appendChild(dot);
+      radarDots.push(dot);
+    }
   } else {
     status.innerText = "❌ Tidak ada orang di sekitar";
     chatBox.classList.add("hidden");
-    console.log("Tidak ada orang");
+    radar.classList.remove("detected");
   }
 };
 
