@@ -1,12 +1,23 @@
-function sendPing() {
-  if (navigator.vibrate) {
-    navigator.vibrate(200);
-  }
+let nearbyUsers = 0;
 
-  const statusText = document.getElementById("status");
-  statusText.innerText = "📡 Ping terkirim! Menunggu balasan...";
+function detectNearbyUsers() {
+  const count = Math.floor(Math.random() * 5) + 1;
+  nearbyUsers = count;
+
+  document.getElementById("nearbyCount").innerText =
+    `👥 ${count} orang aktif di sekitar kamu`;
+}
+
+function sendPing() {
+  if (navigator.vibrate) navigator.vibrate(200);
+
+  document.getElementById("status").innerText =
+    "📡 Ping dikirim ke sekitar...";
 
   setTimeout(() => {
-    statusText.innerText = "👋 Seseorang di sekitar merespons!";
+    document.getElementById("status").innerText =
+      "👋 Ada yang sadar dengan ping kamu!";
   }, 2000);
 }
+
+detectNearbyUsers();
