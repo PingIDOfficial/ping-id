@@ -1,14 +1,12 @@
-const statusText = document.getElementById("status");
-
-navigator.geolocation.getCurrentPosition(
-  () => {
-    statusText.innerText = "Ada orang di sekitar kamu 👀";
-  },
-  () => {
-    statusText.innerText = "Izinkan lokasi untuk menggunakan Ping.ID";
-  }
-);
-
 function sendPing() {
-  alert("📡 Ping terkirim ke orang terdekat!");
+  if (navigator.vibrate) {
+    navigator.vibrate(200);
+  }
+
+  const statusText = document.getElementById("status");
+  statusText.innerText = "📡 Ping terkirim! Menunggu balasan...";
+
+  setTimeout(() => {
+    statusText.innerText = "👋 Seseorang di sekitar merespons!";
+  }, 2000);
 }
