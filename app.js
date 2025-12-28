@@ -1,23 +1,25 @@
-let nearbyUsers = 0;
+const dots = document.querySelectorAll(".dot");
+const chatBox = document.getElementById("chatBox");
+const messages = document.getElementById("messages");
+const statusText = document.getElementById("status");
 
-function detectNearbyUsers() {
-  const count = Math.floor(Math.random() * 5) + 1;
-  nearbyUsers = count;
+dots.forEach(dot => {
+  dot.addEventListener("click", () => {
+    chatBox.classList.remove("hidden");
+    messages.innerHTML += `<div>👤 Orang anonim terhubung</div>`;
+    statusText.innerText = "💬 Terhubung dengan orang di sekitar";
+  });
+});
 
-  document.getElementById("nearbyCount").innerText =
-    `👥 ${count} orang aktif di sekitar kamu`;
-}
+function sendMessage() {
+  const input = document.getElementById("msgInput");
+  if (input.value.trim() === "") return;
 
-function sendPing() {
-  if (navigator.vibrate) navigator.vibrate(200);
-
-  document.getElementById("status").innerText =
-    "📡 Ping dikirim ke sekitar...";
+  messages.innerHTML += `<div>🧑 Kamu: ${input.value}</div>`;
+  input.value = "";
 
   setTimeout(() => {
-    document.getElementById("status").innerText =
-      "👋 Ada yang sadar dengan ping kamu!";
-  }, 2000);
+    messages.innerHTML += `<div>👤 Anonim: halo 👀</div>`;
+    messages.scrollTop = messages.scrollHeight;
+  }, 1000);
 }
-
-detectNearbyUsers();
