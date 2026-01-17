@@ -1,117 +1,71 @@
-console.log("APP.JS JALAN - GPS RADAR REAL");
+console.log("APP.JS JALAN - Ping.IDX Modern");
 
-// =========================
-// FIREBASE
-// =========================
+// Firebase SDK
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import {
-  getDatabase,
-  ref,
-  set,
-  push,
-  onValue,
-  onChildAdded
-} from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+import { getDatabase, ref, push, onChildAdded, set, onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
+// Firebase config
 const firebaseConfig = {
-  apiKey: "AIzaSyCnmYG0cZsv52GmMRxjPPuWmIyNpr4xww",
-  authDomain: "ping-id-chat.firebaseapp.com",
-  databaseURL: "https://ping-id-chat-578b6-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "ping-id-chat",
-  storageBucket: "ping-id-chat.appspot.com",
-  messagingSenderId: "1034233458438",
-  appId: "1:1034233458438:web:0c14b3dd9765cdb8a73887"
+  apiKey: "API_KEY_FIREBASE",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  databaseURL: "YOUR_PROJECT_URL",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
 };
 
+// Init Firebase
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
-
-// =========================
-// GLOBAL
-// =========================
-const myID = "Ping#" + Math.floor(Math.random() * 9000 + 1000);
-const usersRef = ref(db, "users");
 const chatRef = ref(db, "chat");
+const usersRef = ref(db, "users");
+
+// User anonymous ID
+const myID = "Ping#" + Math.floor(Math.random() * 9000 + 1000);
 
 const radar = document.querySelector(".radar");
-const chatBox = document.getElementById("chatBox");
+let radarDots = [];
 const nearbyCount = document.getElementById("nearbyCount");
-
-let myLat = null;
-let myLng = null;
-let dots = [];
+const chatBox = document.getElementById("chatBox");
 
 // =========================
-// GPS REAL
+// GPS SIMULASI / REAL
 // =========================
-navigator.geolocation.watchPosition(
-  pos => {
-    myLat = pos.coords.latitude;
-    myLng = pos.coords.longitude;
+function updateUserLocation() {
+  if (!navigator.geolocation) return;
+
+  navigator.geolocation.getCurrentPosition(pos => {
+    const lat = pos.coords.latitude;
+    const lon = pos.coords.longitude;
 
     set(ref(db, `users/${myID}`), {
-      lat: myLat,
-      lng: myLng,
+      lat, lon,
       lastActive: Date.now()
     });
-  },
-  err => console.error("GPS ERROR:", err),
-  { enableHighAccuracy: true }
-);
-
-// =========================
-// HITUNG JARAK (METER)
-// =========================
-function hitungJarak(lat1, lon1, lat2, lon2) {
-  const R = 6371000;
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLon = (lon2 - lon1) * Math.PI / 180;
-
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(lat1 * Math.PI / 180) *
-      Math.cos(lat2 * Math.PI / 180) *
-      Math.sin(dLon / 2) ** 2;
-
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  });
 }
+setInterval(updateUserLocation, 3000); // update tiap 3 detik
 
 // =========================
-// METER → PIXEL RADAR
-// =========================
-function meterToPixel(meter) {
-  const MAX_METER = 20;
-  const MAX_PIXEL = 130; // radius radar (260 / 2)
-  return (Math.min(meter, MAX_METER) / MAX_METER) * MAX_PIXEL;
-}
-
-// =========================
-// RADAR REALTIME
+// RADAR & USER DETECTION
 // =========================
 onValue(usersRef, snap => {
-  dots.forEach(d => d.remove());
-  dots = [];
+  radarDots.forEach(dot => radar.removeChild(dot));
+  radarDots = [];
 
   let count = 0;
-  const center = 130;
+  snap.forEach(userSnap => {
+    const u = userSnap.val();
+    if (userSnap.key === myID) return;
 
-  snap.forEach(u => {
-    if (u.key === myID) return;
-
-    const data = u.val();
-    if (!data.lat || !data.lng || !myLat || !myLng) return;
-
-    const jarak = hitungJarak(myLat, myLng, data.lat, data.lng);
-    console.log("JARAK:", jarak.toFixed(2), "meter");
-
-    if (jarak <= 20) {
-      count++;
-
+    // Jarak sederhana simulasi (hanya demo)
+    const distance = Math.random() * 200; // nantinya bisa hitung dari GPS real
+    if (distance <= 200) {
       const angle = Math.random() * Math.PI * 2;
-      const radius = meterToPixel(jarak);
-
-      const x = center + Math.cos(angle) * radius;
-      const y = center + Math.sin(angle) * radius;
+      const radius = distance / 2; 
+      const x = 130 + Math.cos(angle) * radius;
+      const y = 130 + Math.sin(angle) * radius;
 
       const dot = document.createElement("div");
       dot.className = "dot";
@@ -119,16 +73,18 @@ onValue(usersRef, snap => {
       dot.style.top = y + "px";
 
       radar.appendChild(dot);
-      dots.push(dot);
+      radarDots.push(dot);
+
+      count++;
     }
   });
 
-  nearbyCount.textContent = `📍 ${count} orang ≤ 20 meter`;
+  nearbyCount.textContent = `📍 ${count} orang ≤ 200 meter`;
   chatBox.classList.toggle("hidden", count === 0);
 });
 
 // =========================
-// CHAT REALTIME
+// CHAT
 // =========================
 window.sendMessage = function () {
   const input = document.getElementById("msgInput");
@@ -145,10 +101,10 @@ window.sendMessage = function () {
 
 onChildAdded(chatRef, snap => {
   const data = snap.val();
-  const box = document.getElementById("messages");
+  const msgBox = document.getElementById("messages");
 
   const div = document.createElement("div");
   div.textContent = `${data.user}: ${data.msg}`;
-  box.appendChild(div);
-  box.scrollTop = box.scrollHeight;
+  msgBox.appendChild(div);
+  msgBox.scrollTop = msgBox.scrollHeight;
 });
