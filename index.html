@@ -2,18 +2,17 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <title>PingIDX</title>
+  <title>Ping.IDX - BBM Modern</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#00ffe1">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
 <div class="app">
-  <h1>📡 PingIDX</h1>
-
+  <h1>📡 Ping.IDX</h1>
+  
   <p id="nearbyCount">📍 Mendeteksi orang sekitar...</p>
-  <p id="status">Radar aktif</p>
+  <p id="status">Mencari orang di sekitar...</p>
 
   <div class="radar">
     <div class="pulse"></div>
@@ -28,7 +27,8 @@
     </div>
   </div>
 
-  <p class="note">Jangkauan simulasi ±20 meter</p>
+  <button onclick="sendPing()">PING</button>
+  <p class="note">Jarak deteksi 100–200 meter</p>
 </div>
 
 <script type="module" src="app.js"></script>
