@@ -23,6 +23,7 @@ body {
   margin: 20px auto;
   position: relative;
   overflow: hidden;
+  background: radial-gradient(circle, #003333 0%, #001a1a 70%);
 }
 
 .pulse {
@@ -46,6 +47,7 @@ body {
   border-radius: 50%;
   position: absolute;
   transform: translate(-50%, -50%);
+  box-shadow: 0 0 10px #00ff6a;
 }
 
 .chat {
