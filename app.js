@@ -1,8 +1,15 @@
-console.log("PingIDX Radar Aktif");
+console.log("PingIDX GPS REAL AKTIF");
 
 // Firebase SDK
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getDatabase, ref, set, push, onValue, onChildAdded } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+import {
+  getDatabase,
+  ref,
+  set,
+  push,
+  onValue,
+  onChildAdded
+} from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
 // Firebase config
 const firebaseConfig = {
@@ -22,64 +29,115 @@ const db = getDatabase(app);
 const usersRef = ref(db, "users");
 const chatRef = ref(db, "chat");
 
-// ID user anonim
+// User anonim
 const myID = "Ping#" + Math.floor(Math.random() * 9000 + 1000);
 
-// Radar
+// UI
 const radar = document.querySelector(".radar");
 const nearbyCount = document.getElementById("nearbyCount");
 const chatBox = document.getElementById("chatBox");
 
 let dots = [];
+let myLocation = null;
 
-// Update posisi user (simulasi GPS)
-function updateMyPosition() {
-  const angle = Math.random() * Math.PI * 2;
-  const radius = Math.random() * 40; // radius radar
-  const x = 50 + Math.cos(angle) * radius;
-  const y = 50 + Math.sin(angle) * radius;
+// =========================
+// GPS LOCATION
+// =========================
+function getLocation() {
+  if (!navigator.geolocation) {
+    alert("Browser tidak mendukung GPS");
+    return;
+  }
 
-  set(ref(db, `users/${myID}`), {
-    x,
-    y,
-    lastActive: Date.now()
-  });
+  navigator.geolocation.watchPosition(
+    (pos) => {
+      myLocation = {
+        lat: pos.coords.latitude,
+        lon: pos.coords.longitude
+      };
+
+      set(ref(db, `users/${myID}`), {
+        lat: myLocation.lat,
+        lon: myLocation.lon,
+        lastActive: Date.now()
+      });
+    },
+    () => alert("Izin lokasi ditolak"),
+    { enableHighAccuracy: true }
+  );
 }
 
-setInterval(updateMyPosition, 3000);
-updateMyPosition();
+getLocation();
 
-// Render radar user terdekat
+// =========================
+// HITUNG JARAK (METER)
+// =========================
+function distanceMeter(lat1, lon1, lat2, lon2) {
+  const R = 6371000; // meter
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1 * Math.PI / 180) *
+    Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) ** 2;
+
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+// =========================
+// RADAR REAL 20 METER
+// =========================
 onValue(usersRef, (snapshot) => {
   dots.forEach(d => d.remove());
   dots = [];
+
+  if (!myLocation) return;
 
   let count = 0;
 
   snapshot.forEach(userSnap => {
     if (userSnap.key === myID) return;
 
-    const user = userSnap.val();
-    const dot = document.createElement("div");
-    dot.className = "dot";
-    dot.style.left = user.x + "%";
-    dot.style.top = user.y + "%";
+    const u = userSnap.val();
+    if (!u.lat || !u.lon) return;
 
-    radar.appendChild(dot);
-    dots.push(dot);
-    count++;
+    const d = distanceMeter(
+      myLocation.lat,
+      myLocation.lon,
+      u.lat,
+      u.lon
+    );
+
+    if (d <= 20) {
+      count++;
+
+      // Konversi meter → radar
+      const angle = Math.random() * Math.PI * 2;
+      const radius = (d / 20) * 120;
+
+      const x = 130 + Math.cos(angle) * radius;
+      const y = 130 + Math.sin(angle) * radius;
+
+      const dot = document.createElement("div");
+      dot.className = "dot";
+      dot.style.left = x + "px";
+      dot.style.top = y + "px";
+
+      radar.appendChild(dot);
+      dots.push(dot);
+    }
   });
 
-  nearbyCount.textContent = `📍 ${count} orang terdeteksi`;
+  nearbyCount.textContent = `📍 ${count} orang ≤ 20 meter`;
 
-  if (count > 0) {
-    chatBox.classList.remove("hidden");
-  } else {
-    chatBox.classList.add("hidden");
-  }
+  chatBox.classList.toggle("hidden", count === 0);
 });
 
-// Kirim pesan
+// =========================
+// CHAT
+// =========================
 window.sendMessage = function () {
   const input = document.getElementById("msgInput");
   if (!input.value.trim()) return;
@@ -93,7 +151,6 @@ window.sendMessage = function () {
   input.value = "";
 };
 
-// Terima pesan
 onChildAdded(chatRef, (snap) => {
   const data = snap.val();
   const msgBox = document.getElementById("messages");
@@ -101,6 +158,5 @@ onChildAdded(chatRef, (snap) => {
   const div = document.createElement("div");
   div.textContent = `${data.user}: ${data.msg}`;
   msgBox.appendChild(div);
-
   msgBox.scrollTop = msgBox.scrollHeight;
 });
