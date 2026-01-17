@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <title>Ping.ID</title>
+  <title>PingIDX</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#00ffe1">
   <link rel="stylesheet" href="style.css">
@@ -10,16 +10,17 @@
 <body>
 
 <div class="app">
-  <h1>📡 Ping.ID</h1>
+  <h1>📡 PingIDX</h1>
 
   <p id="nearbyCount">📍 Mendeteksi orang sekitar...</p>
   <p id="status">Mencari orang di sekitar...</p>
 
-  <div class="radar">
+  <!-- RADAR (DINAMIS) -->
+  <div class="radar" id="radar">
     <div class="pulse"></div>
-    <div class="dot"></div>
   </div>
 
+  <!-- CHAT -->
   <div id="chatBox" class="chat hidden">
     <div class="chat-header">💬 Chat Anonim</div>
     <div id="messages" class="messages"></div>
