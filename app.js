@@ -1,128 +1,83 @@
-console.log("APP.JS JALAN - Ping.IDX Modern GPS");
+console.log("PingIDX App.js JALAN");
 
 // Firebase SDK
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import { getDatabase, ref, push, onChildAdded, set, onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
-// Firebase config
+// ====== CONFIG FIREBASE ======
 const firebaseConfig = {
-  apiKey: "API_KEY_FIREBASE",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  databaseURL: "YOUR_PROJECT_URL",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyDxxxxxxx",
+  authDomain: "pingidx-76020038.firebaseapp.com",
+  databaseURL: "https://pingidx-76020038-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "pingidx-76020038",
+  storageBucket: "pingidx-76020038.appspot.com",
+  messagingSenderId: "1234567890",
+  appId: "1:1234567890:web:abcdef123456"
 };
 
 // Init Firebase
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
+
+// References
 const chatRef = ref(db, "chat");
 const usersRef = ref(db, "users");
 
-// User anonymous ID
-const myID = "Ping#" + Math.floor(Math.random() * 9000 + 1000);
+// ID user anonim
+const userID = "PingIDX#" + Math.floor(Math.random() * 9000 + 1000);
 
+// Radar container
 const radar = document.querySelector(".radar");
 let radarDots = [];
 const nearbyCount = document.getElementById("nearbyCount");
 const chatBox = document.getElementById("chatBox");
 
-// =========================
-// GPS REAL
-// =========================
-function updateUserLocation() {
-  if (!navigator.geolocation) return;
+// ====== USER POSITION SIMULASI GPS ======
+function updateUserPosition() {
+  // Simulasi posisi acak di radar
+  const angle = Math.random() * 2 * Math.PI;
+  const radius = Math.random() * 90 + 20; 
+  const x = 50 + radius * Math.cos(angle) / 1.1;
+  const y = 50 + radius * Math.sin(angle) / 1.1;
 
-  navigator.geolocation.getCurrentPosition(pos => {
-    const lat = pos.coords.latitude;
-    const lon = pos.coords.longitude;
-
-    // Simpan posisi di Firebase
-    set(ref(db, `users/${myID}`), {
-      lat, lon,
-      lastActive: Date.now()
-    });
-  });
+  set(ref(db, `users/${userID}`), { x, y, lastActive: Date.now() });
 }
+setInterval(updateUserPosition, 3000); // tiap 3 detik
 
-// Update lokasi tiap 3 detik
-setInterval(updateUserLocation, 3000);
-
-// =========================
-// HITUNG JARAK (Haversine)
-// =========================
-function getDistance(lat1, lon1, lat2, lon2) {
-  const R = 6371e3; // meter
-  const φ1 = lat1 * Math.PI/180;
-  const φ2 = lat2 * Math.PI/180;
-  const Δφ = (lat2-lat1) * Math.PI/180;
-  const Δλ = (lon2-lon1) * Math.PI/180;
-
-  const a = Math.sin(Δφ/2)**2 + Math.cos(φ1)*Math.cos(φ2)*Math.sin(Δλ/2)**2;
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-  return R * c; // meter
-}
-
-// =========================
-// RADAR & USER DETECTION
-// =========================
-onValue(usersRef, snap => {
+// ====== RENDER RADAR ======
+onValue(usersRef, (snapshot) => {
   radarDots.forEach(dot => radar.removeChild(dot));
   radarDots = [];
+  let count = 0;
 
-  let nearbyUsers = 0;
+  snapshot.forEach(userSnap => {
+    const data = userSnap.val();
+    if (userSnap.key === userID) return;
 
-  snap.forEach(userSnap => {
-    if (userSnap.key === myID) return; // skip diri sendiri
+    const dot = document.createElement("div");
+    dot.classList.add("dot");
+    dot.style.left = `${data.x}%`;
+    dot.style.top = `${data.y}%`;
 
-    const u = userSnap.val();
-    const myPos = snap.val()[myID];
-
-    if (!myPos || !u.lat || !u.lon) return;
-
-    const distance = getDistance(myPos.lat, myPos.lon, u.lat, u.lon);
-
-    if (distance <= 200) { // 100–200 meter
-      const angle = Math.random() * Math.PI * 2;
-      const radius = distance / 2; 
-      const x = 130 + Math.cos(angle) * radius;
-      const y = 130 + Math.sin(angle) * radius;
-
-      const dot = document.createElement("div");
-      dot.className = "dot";
-      dot.style.left = x + "px";
-      dot.style.top = y + "px";
-
-      radar.appendChild(dot);
-      radarDots.push(dot);
-
-      nearbyUsers++;
-    }
+    radar.appendChild(dot);
+    radarDots.push(dot);
+    count++;
   });
 
-  nearbyCount.textContent = `📍 ${nearbyUsers} orang ≤ 200 meter`;
-  chatBox.classList.toggle("hidden", nearbyUsers === 0);
+  nearbyCount.textContent = `📍 ${count} orang ≤ 200 meter`;
+  chatBox.classList.toggle("hidden", count === 0);
 });
 
-// =========================
-// CHAT REALTIME
-// =========================
+// ====== CHAT ======
 window.sendMessage = function () {
   const input = document.getElementById("msgInput");
   if (!input.value.trim()) return;
 
-  push(chatRef, {
-    user: myID,
-    msg: input.value,
-    time: Date.now()
-  });
-
+  push(chatRef, { user: userID, msg: input.value, time: Date.now() });
   input.value = "";
 };
 
-onChildAdded(chatRef, snap => {
+onChildAdded(chatRef, (snap) => {
   const data = snap.val();
   const msgBox = document.getElementById("messages");
 
@@ -131,14 +86,3 @@ onChildAdded(chatRef, snap => {
   msgBox.appendChild(div);
   msgBox.scrollTop = msgBox.scrollHeight;
 });
-
-// =========================
-// PING / NUDGE
-// =========================
-window.sendPing = function() {
-  push(chatRef, {
-    user: myID,
-    msg: "⚡️ Ping!",
-    time: Date.now()
-  });
-};
