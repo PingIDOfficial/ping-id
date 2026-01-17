@@ -98,3 +98,12 @@ button:active {
 #msgInput { flex: 1; padding: 6px; border-radius: 6px; border: none; outline: none; }
 
 .chat button { padding: 6px 10px; background: #00ffcc; border: none; border-radius: 6px; cursor: pointer; }
+/* DOT RADAR DINAMIS */
+.radar-dot {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background: #00ff66;
+  border-radius: 50%;
+  box-shadow: 0 0 10px #00ff66;
+  }
